@@ -2,7 +2,7 @@
 
 <head>
 	
-	<title>Leaflet non-geographic map</title>
+	<title>Germany '83</title>
 
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,9 +13,58 @@
     <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js" integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw==" crossorigin=""></script>
 
 </head>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    .node-text {
+      font: 12px sans-serif;
+    }
+
+    .link {
+      fill: none;
+      stroke: rgb(200, 200, 200);
+      shape-rendering: crispEdges;
+      stroke-dasharray: 2, 2;
+    }
+
+    .indicator {
+      stroke: rgb(100, 100, 100);
+    }
+	
+	h2 {
+		width: 200px;
+		font: 20px sans-serif;
+	}
+	
+	table{
+		width: 200px;
+		font: 14px sans-serif;
+	}
+	
+	tr:hover {background-color: #f5f5f5;}
+	
+	th, td {
+		text-align: left;
+		border-bottom: 1px solid #ddd;
+	}
+  </style>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <!-- <script src="milsymbol.js"></script> -->
+  <script src="https://cdn.rawgit.com/HerrTom/QJM_Wargame/8d993786/web/milsymbol.js"></script>
+  <!-- <script src="GSFG.json"></script> -->
+  <script src="situation.js"></script>
+  <!-- <script src="https://rawgit.com/HerrTom/QJM_Wargame/master/web/situation.js"></script> -->
+</head>
+
 <body>
-<div style="display: flex">
-	<div id="mapid" style="padding:20px; height:90vh; width: 100%;"></div>
+<div style="width: 100%; height: 90vh; display: flex; overflow: hidden;">
+	<div id="mapid" style="padding:20px; height:90vh; width: 70%;"></div>
+	<div style="overflow:auto;height:90vh;width:15%;">
+		<div id="situation"></div>
+	</div>
+	<div style="overflow:auto;height:90vh;width:15%">
+		<div id="equip" style="flex-grow: 1; padding:25px;"></div>
+	</div>
 </div>
 
 <script src="https://rawcdn.githack.com/HerrTom/QJM_Wargame/f9876211d01508bd86aea568495330909d37115c/web/milsymbol.js"></script>
@@ -48,7 +97,7 @@
 					minZoom: -2
 					});
 	
-	var bounds = [[0,0],[4000,4000]]
+	var bounds = [[0,0],[966*4,1348*4]]
 	
 	var image = L.imageOverlay('map.svg',bounds).addTo(map);
 	
@@ -82,7 +131,246 @@
         }
       }).addTo(map);
 	
+	map.on('zoomend', updateOrbat);
+	
+function updateOrbat(){
+pixeldistance = 100;
+//alert(Math.abs(map.options.crs.pointToLatLng(L.point(pixeldistance, 0),map.getZoom()).lng - map.options.crs.pointToLatLng(L.point(0, 0),map.getZoom()).lng))
+getSubUnits('',0,[null,null],Math.abs(map.options.crs.pointToLatLng(L.point(pixeldistance, 0),map.getZoom()).lng - map.options.crs.pointToLatLng(L.point(0, 0),map.getZoom()).lng))
+//alert(getSubUnits('',0,[null,null],Math.abs(map.options.crs.pointToLatLng(L.point(pixeldistance, 0),map.getZoom()).lng - map.options.crs.pointToLatLng(L.point(0, 0),map.getZoom()).lng)).string)
+
+}
+function getSubUnits(command,level,point,distance){
+	var units = []
+	for (var id in situation){
+		if(situation[id].command == command){
+			var distanceToCommand = false;
+			if(command != ""){
+				distanceToCommand = Math.sqrt(Math.pow((situation[command].lat-situation[id].lat),2)+Math.pow((situation[command].lng-situation[id].lng),2))
+				situation[command].distance = Math.max(situation[command].distance,distanceToCommand)
+			}
+			//for(var i = 0; i<level; i++){unitstring += "- "}
+
+			subunits =  getSubUnits(id, level+1, [situation[id].lat, situation[id].lng],(situation[id].distance < distance)?0:distance)
+			if(situation[id].distance < distance){
+				situation[id].marker.addTo(map)
+			}else{
+				map.removeLayer(situation[id].marker)
+			}
+			//We are now manipulating the visibility so no extra units will be visible
+			situation[id].subUnitsVisible = false;
+			situation[id].commandVisible = false;
+			
+			//unitstring += (situation[id].distance < distance)?"<b>":"" //Display unit
+			//unitstring += id + " DC: "+ distanceToCommand + " DS: " + situation[id].distance+ "<"+distance+"\n"
+			//unitstring += (situation[id].distance < distance)?"</b>":"" //Display unit
+			units.push({id:id,level:level})
+			units = units.concat(subunits.situation);
+		}
+	}
+	return {situation:units};
+}
+	
 </script>
+
+
+ <script>
+    var duration = 300;
+    var margin = { top: 15, right: 20, bottom: 10, left: 30 };
+    var svg = d3.select("#situation")
+      .append("svg")
+      .attr("width", 250)
+      .attr("height", 500)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	
+	
+    function geoJson2tree(data, name, command) {
+      var rawdata = {};
+      for (var key in data.features) {
+        rawdata[data.features[key].properties[name]] = data.features[key];
+        rawdata[data.features[key].properties[name]].suborgs = [];
+        data.features[key].name = data.features[key].properties[name].replace('&#228;', 'ä').replace('&#229;', 'å');
+        data.features[key].sidc = data.features[key].properties["SIDC"];
+		data.features[key].eqp  = data.features[key].properties["equipment"]
+		<!-- console.log(data.features[key].eqp) -->
+		data.features[key].color = data.features[key].properties["color"]
+      }
+      var tree = { "name": "ALL", "sidc": "SFGP------", "suborgs": [] };
+      for (var key in rawdata) {
+        if (rawdata.hasOwnProperty(rawdata[key].properties[command])) {
+          rawdata[rawdata[key].properties[command]].suborgs.push(rawdata[key]);
+        } else {
+          var newCommand = { "name": rawdata[key].properties[command], "sidc": "SFGP------", "suborgs": [rawdata[key]], color: rawdata[key].properties["color"] };
+          rawdata[rawdata[key].properties[command]] = newCommand;
+          tree.suborgs.push(newCommand);
+        }
+      }
+      return tree;
+    }
+    var structure = geoJson2tree(situation, "name", "command");
+
+    var d3cluster = d3.tree().nodeSize([0, 20]);;
+    var d3hirarcy = d3.hierarchy(structure, function (d) { return d.suborgs; });
+    d3hirarcy.x0 = 0;
+    d3hirarcy.y0 = 0;
+
+    update(svg, d3cluster, d3hirarcy, d3hirarcy);
+	
+	
+    function update(svg, d3cluster, d3hirarcy, source) {
+      var barHeight = 25;
+      // Compute the new tree layout.
+      var nodes = d3cluster(d3hirarcy),
+        links = nodes.links();
+
+      var height = Math.max(500, nodes.descendants().length * barHeight + margin.top + margin.bottom);
+
+      d3.select("#situation").select("svg").transition()
+        .duration(duration)
+        .attr("height", height);
+        <!-- .attr("height", 800); -->
+
+      // Compute the "layout".
+      var i = 0;
+      nodes.eachBefore(function (d) {
+        //console.log('d.x0 '+d.x0 +' === d.x ' + ((i++) * barHeight) + '  === d.name ' + d.data.name)
+        d.x = (i++) * barHeight;
+      });
+
+      //update existing
+      var node = svg.selectAll("g.node")
+        .data(d3hirarcy.descendants(), function (d) { return d.id || (d.id = ++i); });
+
+      node.transition()
+        .duration(duration)
+        .attr("transform", function (d) { return "translate(" + (d.y) + "," + (d.x) + ")"; });
+
+      node.select(".indicator").transition()
+        .duration(duration)
+        .attr("fill", function (d) { if (d._children) { return "rgb(250,250,250)" } else { return "rgb(100,100,100)" } })
+        .attr("transform", function (d) { if (d._children) { return "translate(-21,0) rotate(0)" } else { return "translate(-21,0) rotate(45)" } })
+      //Enter new nodes
+      var newNode = node.enter().append("g")
+        .attr("class", "node")
+        .attr("transform", function (d) { return "translate(" + (source.y0) + "," + (source.x0) + ")"; })
+        .style("opacity", 1e-6);
+
+      newNode.transition()
+        .duration(duration)
+        .attr("transform", function (d) { return "translate(" + (d.y) + "," + (d.x) + ")"; })
+        .style("opacity", 1);
+
+      newNode.each(function (d) {
+        if (d.children || d._children) {
+          d3.select(this)
+            .append("path")
+            .attr("class", "indicator")
+            .attr("d", "M -0,-5 l 5,5 -5,5 z")
+            .attr("fill", function (d) { if (d._children) { return "rgb(250,250,250)" } else { return "rgb(100,100,100)" } })
+            .attr("transform", function (d) { if (d._children) { return "translate(-21,0) rotate(0)" } else { return "translate(-21,0) rotate(45)" } })
+            .on("click", function click(d) {
+              if (d.children) {
+                d._children = d.children;
+                d.children = null;
+              } else {
+                d.children = d._children;
+                d._children = null;
+              }
+              update(svg, d3cluster, d3hirarcy, d);
+            });
+        }
+      })
+
+      //milsymbol icon    
+      newNode.append("g")
+        .attr("class", "symbol")
+        .attr("transform", function (d) {
+          if (d.data.sidc) d.data.symbol = new ms.Symbol(d.data.sidc, { size: 15, colorMode: ms.ColorMode(d.data.color,d.data.color,d.data.color,d.data.color,d.data.color)});
+          return "translate(" + (-d.data.symbol.getOctagonAnchor().x) + "," + (-d.data.symbol.getOctagonAnchor().y) + ")";
+        })
+        .each(function (d) { this.appendChild(d.data.symbol.asDOM()) }).on("click", function nodeClick(d) {
+																		//console.log(d.data.eqp)
+																		// actually set equip div data to equipment
+																		document.getElementById("equip").innerHTML = d.data.eqp
+																		console.log(d.data.symbol.getProperties().echelon)
+																	});
+	  
+      newNode.append("text")
+        .attr("class", "node-text")
+        .attr("dy", 3)
+        .attr("x", 20)
+        .style("text-anchor", "start")
+        .text(function (d) { return d.data.name; });
+
+      //Remove old nodes
+      node.exit()
+        .transition()
+        .duration(duration)
+        .attr("transform", function (d) {
+          return "translate(" + source.y + "," + source.x + ")";
+        })
+        .style("opacity", 1e-6)
+        .remove();
+
+      //Link code
+      var link = svg.selectAll("path.link")
+        .data(d3hirarcy.descendants().slice(1), function (link) { return link.id + ':' + link.parent.id; });
+
+      // Transition links to their new position.
+      link.transition()
+        .duration(duration)
+        .attr("d", function (d) {
+          return "M" + d.parent.y + "," + d.parent.x
+            + " l"
+            + " 0," + (d.x - d.parent.x) + " "
+            + (d.y - d.parent.y) / 2 + "," + 0 + " "
+            + "L" + d.y + "," + d.x;
+        });
+
+      var newLink = link.enter()
+        .insert("path", "g")
+        .attr("class", "link")
+        .attr("d", function (d) {
+          return "M" + source.y0 + "," + source.x0
+            + " l"
+            + " 0," + (source.x0 - source.x0) + " "
+            + (source.y0 - source.y0) / 2 + "," + 0 + " "
+            + "L" + source.y0 + "," + source.x0;
+        });
+
+      newLink.transition()
+        .duration(duration)
+        .attr("d", function (d) {
+          return "M" + d.parent.y + "," + d.parent.x
+            + " l"
+            + " 0," + (d.x - d.parent.x) + " "
+            + (d.y - d.parent.y) / 2 + "," + 0 + " "
+            + "L" + d.y + "," + d.x;
+        });
+
+      // Transition exiting nodes to the parent's new position.
+      link.exit().transition()
+        .duration(duration)
+        .attr("d", function (d) {
+          return "M" + source.y0 + "," + source.x0
+            + " l"
+            + " 0," + (source.x0 - source.x0) + " "
+            + (source.y0 - source.y0) / 2 + "," + 0 + " "
+            + "L" + source.y0 + "," + source.x0;
+        })
+        .remove();
+
+      // if click
+      // Old positions for transition.
+      nodes.each(function (d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+
+    }
+
+  </script>
 </body>
 
 </html>
