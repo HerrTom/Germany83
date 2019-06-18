@@ -46,10 +46,10 @@
 
 <body>
 <div style="width: 100%; height: 90vh; display: flex; overflow: hidden;">
-	<div style="overflow:auto;height:100vh;">
+	<div style="overflow:auto;height:90vh;">
 		<div id="orbat"></div>
 	</div>
-	<div style="overflow:auto;height:100vh;">
+	<div style="overflow:auto;height:90vh;">
 		<div id="equip" style="flex-grow: 1; padding:25px;"></div>
 	</div>
 </div>
@@ -88,7 +88,32 @@
       }
       return tree;
     }
+	
+	function dict2tree(data,name,command) {
+	  var rawdata = {};
+      for (var key in data) {
+        rawdata[data[key][name]] = data[key];
+        rawdata[data[key][name]].suborgs = [];
+        // data[key]['name'] = data.features[key].properties[name].replace('&#228;', 'ä').replace('&#229;', 'å');
+        //data[key].sidc = data.features[key].properties["SIDC"];
+		//data[key].eqp  = data.features[key].properties["equipment"]
+		<!-- console.log(data.features[key].eqp) -->
+		//data.features[key].color = data.features[key].properties["color"]
+      }
+      var tree = { "name": "ALL", "sidc": "SFGP------", "suborgs": [] };
+      for (var key in rawdata) {
+        if (rawdata.hasOwnProperty(rawdata[key].properties[command])) {
+          rawdata[rawdata[key].properties[command]].suborgs.push(rawdata[key]);
+        } else {
+          var newCommand = { "name": rawdata[key].properties[command], "sidc": "SFGP------", "suborgs": [rawdata[key]], color: rawdata[key].properties["color"] };
+          rawdata[rawdata[key].properties[command]] = newCommand;
+          tree.suborgs.push(newCommand);
+        }
+      }
+      return tree;
+	}
     var structure = geoJson2tree(situation, "name", "command");
+	console.log(structure)
 
     var d3cluster = d3.tree().nodeSize([0, 20]);;
     var d3hirarcy = d3.hierarchy(structure, function (d) { return d.suborgs; });
