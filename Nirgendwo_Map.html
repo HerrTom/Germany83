@@ -1,0 +1,558 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>QJM - Nirgendwo</title>
+<style>
+    .node-text {
+      font: 12px sans-serif;
+    }
+
+    .link {
+      fill: none;
+      stroke: rgb(200, 200, 200);
+      shape-rendering: crispEdges;
+      stroke-dasharray: 2, 2;
+    }
+
+    .indicator {
+      stroke: rgb(100, 100, 100);
+    }
+	
+	h2 {
+		width: 200px;
+		font: 20px sans-serif;
+	}
+	
+	table{
+		width: 200px;
+		font: 14px sans-serif;
+	}
+	
+	tr:hover {background-color: #f5f5f5;}
+	
+	th, td {
+		text-align: left;
+		border-bottom: 1px solid #ddd;
+	}
+</style>
+
+<style type="text/css">
+
+	.page{
+	position: absolute; 
+	left: 0px; 
+	top: 0px; 
+		width: 100%;
+		height: 100%;
+	}
+		html, body {
+		height: 100%;
+	}
+	a{
+		color: rgb(140, 255, 140);
+	}
+			.heading{
+		height: 50px;
+		width: 100%;
+		background-color:rgb(0,168,220);
+		position: relative;	
+
+
+	}
+	.heading a{
+		font-size: 20px;
+		text-decoration: none;
+    	position: relative; 
+    	top: 12px;
+		left: 10px;
+font-family: Helvetica, arial, freesans, clean, sans-serif;
+font-weight: normal;
+    	color: #fff;	
+	}
+		.h1{
+    	bottom: 0;
+		left: 10px;
+		font-family: Helvetica, arial, freesans, clean, sans-serif;
+font-size: 30px;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+line-height: 1.2;
+    	color: rgb(0,168,220);
+    	margin-top: 5px;
+margin-bottom: 5px;
+	}
+	.h2{
+font-family: Helvetica, arial, freesans, clean, sans-serif;
+font-size: 23px;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+line-height: 1.2;
+    	color: rgb(0,168,220);
+    	margin-top: 5px;
+margin-bottom: 5px;
+	}
+		.h3{
+font-family: Helvetica, arial, freesans, clean, sans-serif;
+font-size: 20px;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+line-height: 1.2;
+    	color: rgb(0,168,220);
+    	margin-top: 5px;
+margin-bottom: 5px;
+
+	}
+	.logo{
+    	position: absolute; 
+    	bottom: 10px;
+		right: 10px;    	
+	}
+
+	.mymap{
+		position: absolute; 
+		left: 0px; 
+		top: 20px; 
+		bottom: 20px; 
+		right: 0px;
+	}
+	
+	#MainSidebar{
+	position: absolute; 
+	width: 300px; 
+	top: 50px; 
+	right: 0px;
+	bottom: 0px;
+	background-color:#ffffff;
+	border-left:3px solid #202020;
+	color:#202020;
+	padding:5px;
+    z-index:100;
+	overflow: auto;
+	font-size: 12px;
+	}
+
+	#SubSidebar{
+	position: absolute; 
+	width: 280px;
+	height: 100px; 
+	bottom: 0px; 
+	right: 0px;
+	background-color:#ffffff;
+	border-left:3px solid #202020;
+	border-top:3px solid #202020;
+	color:#202020;
+	padding:5px;
+    z-index:100;
+	overflow: auto;
+	font-size: 12px;
+	}
+.loader {
+	  border: 16px solid #f3f3f3; /* Light grey */
+	  border-top: 16px solid #3498db; /* Blue */
+	  border-radius: 50%;
+	  width: 120px;
+	  height: 120px;
+	  animation: spin 2s linear infinite;
+	}
+
+	@keyframes spin {
+	  0% { transform: rotate(0deg); }
+	  100% { transform: rotate(360deg); }
+	}
+</style>
+
+
+<!-- <script src="dist/leaflet.js"  type="text/javascript" ></script> -->
+<script  type="text/javascript" src="milsymbol.js"></script>
+<script  type="text/javascript" src="./nirgendwo_data/orbat.js"></script>
+<script  type="text/javascript" src="./nirgendwo_data/situation.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ==" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js" integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw==" crossorigin=""></script>
+<!-- <link rel="stylesheet" href="dist/leaflet.css" /> -->
+ 
+<script src="https://d3js.org/d3.v4.min.js"></script>
+ 
+<script  type="text/javascript" >
+var map;
+
+		
+function getSubUnits(command,level,point,distance){
+	var units = []
+	for (var id in orbat){
+		if(orbat[id].command == command){
+			var distanceToCommand = false;
+			if(command != ""){
+				distanceToCommand = Math.sqrt(Math.pow((orbat[command].lat-orbat[id].lat),2)+Math.pow((orbat[command].lng-orbat[id].lng),2))
+				orbat[command].distance = Math.max(orbat[command].distance,distanceToCommand)
+			}
+			//for(var i = 0; i<level; i++){unitstring += "- "}
+
+			subunits =  getSubUnits(id, level+1, [orbat[id].lat, orbat[id].lng],(orbat[id].distance < distance)?0:distance)
+			if(orbat[id].distance < distance){
+				orbat[id].marker.addTo(map).on('click', onUnitMarker)
+			}else{
+				map.removeLayer(orbat[id].marker)
+			}
+			//We are now manipulating the visibility so no extra units will be visible
+			orbat[id].subUnitsVisible = false;
+			orbat[id].commandVisible = false;
+			
+			//unitstring += (orbat[id].distance < distance)?"<b>":"" //Display unit
+			//unitstring += id + " DC: "+ distanceToCommand + " DS: " + orbat[id].distance+ "<"+distance+"\n"
+			//unitstring += (orbat[id].distance < distance)?"</b>":"" //Display unit
+			units.push({id:id,level:level})
+			units = units.concat(subunits.orbat);
+		}
+	}
+	return {orbat:units};
+}
+
+function updateOrbat(){
+pixeldistance = 100;
+//alert(Math.abs(map.options.crs.pointToLatLng(L.point(pixeldistance, 0),map.getZoom()).lng - map.options.crs.pointToLatLng(L.point(0, 0),map.getZoom()).lng))
+getSubUnits('',0,[null,null],Math.abs(map.options.crs.pointToLatLng(L.point(pixeldistance, 0),map.getZoom()).lng - map.options.crs.pointToLatLng(L.point(0, 0),map.getZoom()).lng))
+//alert(getSubUnits('',0,[null,null],Math.abs(map.options.crs.pointToLatLng(L.point(pixeldistance, 0),map.getZoom()).lng - map.options.crs.pointToLatLng(L.point(0, 0),map.getZoom()).lng)).string)
+
+}
+
+function onUnitMarker(e){
+	console.log(e.target.options.datatable);
+	document.getElementById("equip").innerHTML = e.target.options.datatable;
+}
+
+function contextUnitMarker(e){
+	console.log(e.target)
+}
+
+function unitMoved(e){
+	orbat[this.id].lat = this.getLatLng().lat
+	orbat[this.id].lng = this.getLatLng().lng
+	//alert(this.id)
+	//Reset all distances
+	for (var id in orbat){
+		orbat[id].distance = 0;
+	}
+	//calulate new distances
+	updateOrbat()
+	//make sure visibility is correct
+	updateOrbat()
+}
+
+function showhideSubUnits(e){
+	for (var id in orbat){
+		if(orbat[id].command == this.id){
+			if(!orbat[this.id].subUnitsVisible){
+				orbat[id].marker.addTo(map).on('click', onUnitMarker)
+			}else{
+				map.removeLayer(orbat[id].marker)
+			}
+		}
+	}
+	orbat[this.id].subUnitsVisible = !orbat[this.id].subUnitsVisible
+}
+
+
+function showhideCommandUnit(e){
+	for (var id in orbat){
+		if(id == orbat[this.id].command){	
+			if(!orbat[this.id].commandVisible){
+				orbat[id].marker.addTo(map).on('click', onUnitMarker)
+			}else{
+				map.removeLayer(orbat[id].marker)
+			}
+		}
+	}
+	orbat[this.id].commandVisible = !orbat[this.id].commandVisible
+}
+
+function init(){
+		
+var cloudmadeUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+		cloudmadeAttribution = '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+		cloudmade = L.tileLayer(cloudmadeUrl, {maxZoom: 18, attribution: cloudmadeAttribution}), bounds = [[-990*4,0],[0,1000*4]],
+		latlng = L.latLng(-990*2,1000*2), imagelayer = L.imageOverlay('./nirgendwo_data/nirgendwo.svg',bounds, {id: 'MapID'});
+
+	var territory = L.imageOverlay('./nirgendwo_data/territory.bmp',bounds, {id: 'MapID', opacity: 0.2})
+	
+	territoryGroup = L.layerGroup([imagelayer,territory]);
+	
+	var baseMaps = {
+		'Terrain': imagelayer,
+		'Territory': territoryGroup,
+	};
+	
+	map = L.map('map', {crs: L.CRS.Simple, center: latlng, zoom: -2, layers: [territoryGroup], minZoom: -5});
+
+	
+	L.control.layers(baseMaps).addTo(map);
+
+	var mysymbol = [];
+	var myicon = [];
+	var mymarker =[];
+	
+	UnitMarker = L.Marker.extend({
+   		options: { 
+			id: ''
+  		}
+	});
+
+	for (var key in orbat){
+		orbat[key].distance = 0;
+		orbat[key].subUnitsVisible  = false;
+		orbat[key].commandVisible  = false;
+
+		var color = ms.ColorMode(orbat[key].color,orbat[key].color,orbat[key].color,orbat[key].color,orbat[key].color)
+		
+		iconSize = {"D":20,"E":22,"F":24,"G":26,"H":28,"I":30,"J":32,"K":34,"-":30};
+
+		mysymbol[key] = new ms.Symbol(orbat[key].sidc,{size:iconSize[(orbat[key].sidc).charAt(11)],uniqueDesignation:orbat[key].ulabel,higherFormation:orbat[key].hqlabel,colorMode:color,outlineWidth:5})
+		// console.log(key + ' | ' + orbat[key].sidc.charAt(11) + ' | ' +iconSize[(orbat[key].sidc).charAt(11)])
+		var size = mysymbol[key].getSize()
+
+		myicon[key] = L.divIcon({	className: 'test', 
+							html : mysymbol[key].asSVG(), 
+							iconAnchor: new L.Point(size.width/2, size.height/2)});
+		
+		
+		orbat[key].marker = L.marker([orbat[key].lat, orbat[key].lng],{icon:myicon[key], draggable:false, id:key, datatable:orbat[key].datatable}).bindTooltip(orbat[key].fullname); 
+		
+		// orbat[key].marker.on('dragend', unitMoved);
+		// orbat[key].marker.on('click', showhideSubUnits);
+		// orbat[key].marker.on('contextmenu', showhideCommandUnit);
+		orbat[key].marker.on('contextmenu', contextUnitMarker);
+		orbat[key].marker.id = key;
+	
+		//orbat[key].marker.addTo(map)
+	}
+	units = getSubUnits('',0,[null,null],10)
+	
+
+	// for(var id in units.orbat){ 
+	//	 document.getElementById("orbat").innerHTML += '<div style="padding-left:'+(10*units.orbat[id].level)+'px">'+mysymbol[units.orbat[id].id].textXML+'</div>'; -->
+	// }
+	
+	map.on('zoomend', updateOrbat);
+	// document.getElementById("loader").style.display = "none";
+	
+	updateOrbat()
+}
+</script>
+</head>
+<body onload="init()">
+<div style="width: 100%; height: 90; display: flex; overflow: hidden;">
+	<div id="map" style="padding:20px; height:90vh; width: 70%;"></div>
+	<div style="overflow:auto;height:90vh;width:15%;">
+		<div id="situation"></div>
+	</div>
+	<div style="overflow:auto;height:90vh;width:15%">
+		<div id="equip" style="flex-grow: 1; padding:25px;"></div>
+	</div>
+</div>
+<!-- <div id="orbat">ORBAT</div> -->
+<script>
+    var duration = 300;
+    var margin = { top: 15, right: 20, bottom: 10, left: 30 };
+    var svg = d3.select("#situation")
+      .append("svg")
+      .attr("width", 250)
+      .attr("height", 500)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	
+	
+    function geoJson2tree(data, name, command) {
+      var rawdata = {};
+      for (var key in data.features) {
+        rawdata[data.features[key].properties[name]] = data.features[key];
+        rawdata[data.features[key].properties[name]].suborgs = [];
+        data.features[key].name = data.features[key].properties[name].replace('&#228;', 'ä').replace('&#229;', 'å');
+        data.features[key].sidc = data.features[key].properties["SIDC"];
+		data.features[key].eqp  = data.features[key].properties["equipment"]
+		// console.log(data.features[key].eqp)
+		data.features[key].color = data.features[key].properties["color"]
+      }
+      // var tree = { "name": "", "sidc": "SFGP------", "suborgs": [] };
+      var tree = { "name": "ALL COMMAND", "sidc": "SFGP------", "suborgs": [] };
+      for (var key in rawdata) {
+        if (rawdata.hasOwnProperty(rawdata[key].properties[command])) {
+          rawdata[rawdata[key].properties[command]].suborgs.push(rawdata[key]);
+        } else {
+          var newCommand = { "name": rawdata[key].properties[command], "sidc": "SFGP------", "suborgs": [rawdata[key]], color: rawdata[key].properties["color"] };
+          rawdata[rawdata[key].properties[command]] = newCommand;
+          tree.suborgs.push(newCommand);
+        }
+      }
+      return tree;
+    }
+    var structure = geoJson2tree(situation, "name", "command");
+
+    var d3cluster = d3.tree().nodeSize([0, 20]);;
+    var d3hirarcy = d3.hierarchy(structure, function (d) { return d.suborgs; });
+    d3hirarcy.x0 = 0;
+    d3hirarcy.y0 = 0;
+
+    update(svg, d3cluster, d3hirarcy, d3hirarcy);
+	
+	
+    function update(svg, d3cluster, d3hirarcy, source) {
+      var barHeight = 25;
+      // Compute the new tree layout.
+      var nodes = d3cluster(d3hirarcy),
+        links = nodes.links();
+
+      var height = Math.max(500, nodes.descendants().length * barHeight + margin.top + margin.bottom);
+
+      d3.select("#situation").select("svg").transition()
+        .duration(duration)
+        .attr("height", height);
+        //.attr("height", 800);
+
+      // Compute the "layout".
+      var i = 0;
+      nodes.eachBefore(function (d) {
+        //console.log('d.x0 '+d.x0 +' === d.x ' + ((i++) * barHeight) + '  === d.name ' + d.data.name)
+        d.x = (i++) * barHeight;
+      });
+
+      //update existing
+      var node = svg.selectAll("g.node")
+        .data(d3hirarcy.descendants(), function (d) { return d.id || (d.id = ++i); });
+
+      node.transition()
+        .duration(duration)
+        .attr("transform", function (d) { return "translate(" + (d.y) + "," + (d.x) + ")"; });
+
+      node.select(".indicator").transition()
+        .duration(duration)
+        .attr("fill", function (d) { if (d._children) { return "rgb(250,250,250)" } else { return "rgb(100,100,100)" } })
+        .attr("transform", function (d) { if (d._children) { return "translate(-21,0) rotate(0)" } else { return "translate(-21,0) rotate(45)" } })
+      //Enter new nodes
+      var newNode = node.enter().append("g")
+        .attr("class", "node")
+        .attr("transform", function (d) { return "translate(" + (source.y0) + "," + (source.x0) + ")"; })
+        .style("opacity", 1e-6);
+
+      newNode.transition()
+        .duration(duration)
+        .attr("transform", function (d) { return "translate(" + (d.y) + "," + (d.x) + ")"; })
+        .style("opacity", 1);
+
+      newNode.each(function (d) {
+        if (d.children || d._children) {
+          d3.select(this)
+            .append("path")
+            .attr("class", "indicator")
+            .attr("d", "M -0,-5 l 5,5 -5,5 z")
+            .attr("fill", function (d) { if (d._children) { return "rgb(250,250,250)" } else { return "rgb(100,100,100)" } })
+            .attr("transform", function (d) { if (d._children) { return "translate(-21,0) rotate(0)" } else { return "translate(-21,0) rotate(45)" } })
+            .on("click", function click(d) {
+              if (d.children) {
+                d._children = d.children;
+                d.children = null;
+              } else {
+                d.children = d._children;
+                d._children = null;
+              }
+              update(svg, d3cluster, d3hirarcy, d);
+            });
+        }
+      })
+
+      //milsymbol icon    
+      newNode.append("g")
+        .attr("class", "symbol")
+        .attr("transform", function (d) {
+          if (d.data.sidc) d.data.symbol = new ms.Symbol(d.data.sidc, { size: 15, colorMode: ms.ColorMode(d.data.color,d.data.color,d.data.color,d.data.color,d.data.color)});
+          return "translate(" + (-d.data.symbol.getOctagonAnchor().x) + "," + (-d.data.symbol.getOctagonAnchor().y) + ")";
+        })
+        .each(function (d) { this.appendChild(d.data.symbol.asDOM()) }).on("click", function nodeClick(d) {
+																		//console.log(d.data.eqp)
+																		// actually set equip div data to equipment
+																		document.getElementById("equip").innerHTML = d.data.eqp
+																		console.log(d.data.symbol.getProperties().echelon)
+																	});
+	  
+      newNode.append("text")
+        .attr("class", "node-text")
+        .attr("dy", 3)
+        .attr("x", 20)
+        .style("text-anchor", "start")
+        .text(function (d) { return d.data.name; });
+
+      //Remove old nodes
+      node.exit()
+        .transition()
+        .duration(duration)
+        .attr("transform", function (d) {
+          return "translate(" + source.y + "," + source.x + ")";
+        })
+        .style("opacity", 1e-6)
+        .remove();
+
+      //Link code
+      var link = svg.selectAll("path.link")
+        .data(d3hirarcy.descendants().slice(1), function (link) { return link.id + ':' + link.parent.id; });
+
+      // Transition links to their new position.
+      link.transition()
+        .duration(duration)
+        .attr("d", function (d) {
+          return "M" + d.parent.y + "," + d.parent.x
+            + " l"
+            + " 0," + (d.x - d.parent.x) + " "
+            + (d.y - d.parent.y) / 2 + "," + 0 + " "
+            + "L" + d.y + "," + d.x;
+        });
+
+      var newLink = link.enter()
+        .insert("path", "g")
+        .attr("class", "link")
+        .attr("d", function (d) {
+          return "M" + source.y0 + "," + source.x0
+            + " l"
+            + " 0," + (source.x0 - source.x0) + " "
+            + (source.y0 - source.y0) / 2 + "," + 0 + " "
+            + "L" + source.y0 + "," + source.x0;
+        });
+
+      newLink.transition()
+        .duration(duration)
+        .attr("d", function (d) {
+          return "M" + d.parent.y + "," + d.parent.x
+            + " l"
+            + " 0," + (d.x - d.parent.x) + " "
+            + (d.y - d.parent.y) / 2 + "," + 0 + " "
+            + "L" + d.y + "," + d.x;
+        });
+
+      // Transition exiting nodes to the parent's new position.
+      link.exit().transition()
+        .duration(duration)
+        .attr("d", function (d) {
+          return "M" + source.y0 + "," + source.x0
+            + " l"
+            + " 0," + (source.x0 - source.x0) + " "
+            + (source.y0 - source.y0) / 2 + "," + 0 + " "
+            + "L" + source.y0 + "," + source.x0;
+        })
+        .remove();
+
+      // if click
+      // Old positions for transition.
+      nodes.each(function (d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+
+    }
+
+</script>
+
+
+</body>
+</html>
