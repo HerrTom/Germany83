@@ -272,8 +272,8 @@ function init(){
 var cloudmadeUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
 		cloudmadeAttribution = '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
 		cloudmade = L.tileLayer(cloudmadeUrl, {maxZoom: 18, attribution: cloudmadeAttribution}), bounds = [[-2550,0],[0,2800]],
-		latlng = L.latLng(-2550/2,2800/2), imagelayer = L.imageOverlay('./khrebetia_data/khrebetia.png',bounds, {id: 'MapID'}),
-		imagelayersup = L.imageOverlay('./khrebetia_data/khrebetia.png',bounds, {id: 'SupplyMap'});
+		latlng = L.latLng(-2550/2,2800/2), imagelayer = L.imageOverlay('https://raw.githack.com/HerrTom/Germany83/master/khrebetia_data/Khrebetia.png',bounds, {id: 'MapID'}),
+		imagelayersup = L.imageOverlay('https://raw.githack.com/HerrTom/Germany83/master/khrebetia_data/Khrebetia.png',bounds, {id: 'SupplyMap'});
 
 	var territory = L.imageOverlay('./khrebetia_data/territory.bmp',bounds, {id: 'MapID', opacity: 0.2});
 	var supply = L.imageOverlay('./khrebetia_data/supply.bmp',bounds, {id: 'SupplyMap', opacity: 0.25});
